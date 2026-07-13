@@ -1,12 +1,17 @@
+
 name: Unzip
 on: [push]
+permissions:
+  contents: write
 jobs:
   unzip:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Dézipper
-        run: unzip nzassa-skin-source.zip
+        run: unzip nzassa-skin-source.zip -d./
       - name: Supprimer ZIP
         run: rm nzassa-skin-source.zip
       - uses: stefanzweifel/git-auto-commit-action@v5

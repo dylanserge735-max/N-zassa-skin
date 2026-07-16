@@ -16,11 +16,6 @@ export async function POST(request: NextRequest) {
       motDePasse,
       prenom,
       nonDeFamille,
-      genre,
-      age,
-      pays,
-      ville,
-      consentementTraitement,
     } = body;
 
     if (!email ||!motDePasse ||!prenom ||!nonDeFamille) {
@@ -31,9 +26,9 @@ export async function POST(request: NextRequest) {
     }
 
     const utilisateurExistant = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()));
+   .select()
+   .from(users)
+   .where(eq(users.email, email.toLowerCase()));
 
     if (utilisateurExistant.length > 0) {
       return NextResponse.json(
@@ -43,23 +38,16 @@ export async function POST(request: NextRequest) {
     }
 
     const motDePasseHache = await bcrypt.hash(motDePasse, 12);
-    const referenceDeCode = uuidv4().substring(0, 8).toUpperCase();
 
     const nouvelUtilisateur = await db
-    .insert(users)
-    .values({
+   .insert(users)
+   .values({
         email: email.toLowerCase(),
         password: motDePasseHache,
         firstName: prenom,
         lastName: nonDeFamille,
-        genre,
-        age,
-        pays,
-        ville,
-        codeReferral: referenceDeCode,
-        consentementTraitement,
       })
-    .returning();
+   .returning();
 
     const reponse = NextResponse.json({
       succes: true,

@@ -1,8 +1,8 @@
 // src/app/api/authentification/registre/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";                      // ✅ Fix #1 : bon import Drizzle
-import { users } from "@/db/schema";            // ✅ Fix #1 : bon import schema
+import { db } from "@/db"; 
+import { users } from "@/db/schema"; 
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // ✅ Fix #2 : variables sans espaces (camelCase)
     const {
       email,
       motDePasse,
@@ -21,40 +20,34 @@ export async function POST(request: NextRequest) {
       age,
       pays,
       ville,
-      consentementTraitement,   // était : "consentement au traitement des données"
+      consentementTraitement,
     } = body;
 
-    // Valider les champs obligatoires
-    if (!email || !motDePasse || !prenom || !nomDeFamille) {
+    if (!email ||!motDePasse ||!prenom ||!nomDeFamille) {
       return NextResponse.json(
-        { erreur: "Veuillez remplir tous les champs obligatoires." },
+        { erreur: "Veuillez remplir tous les champs obligatoires.", message: "" },
         { status: 400 }
       );
     }
 
-    // Vérifier si l'utilisateur existe déjà
     const utilisateurExistant = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()));
+     .select()
+     .from(users)
+     .where(eq(users.email, email.toLowerCase()));
 
     if (utilisateurExistant.length > 0) {
       return NextResponse.json(
-        { erreur: "Un compte existe déjà avec cette adresse e-mail." },
+        { erreur: "Un compte existe déjà avec cette adresse e-mail.", message: "" },
         { status: 400 }
       );
     }
 
-    // Hacher le mot de passe
     const motDePasseHache = await bcrypt.hash(motDePasse, 12);
-
-    // Générer un code de parrainage
     const codeReference = uuidv4().substring(0, 8).toUpperCase();
 
-    // Créer un utilisateur
     const nouvelUtilisateur = await db
-      .insert(users)
-      .values({
+     .insert(users)
+     .values({
         email: email.toLowerCase(),
         motDePasse: motDePasseHache,
         prenom,
@@ -64,13 +57,13 @@ export async function POST(request: NextRequest) {
         pays,
         ville,
         codeReference,
-        consentementTraitement,   // ✅ Fix #2 : plus d'espaces
+        consentementTraitement,
       })
-      .returning();
+     .returning();
 
-    // Créer une réponse avec cookie de session
     const reponse = NextResponse.json({
       succes: true,
+      message: "Inscription réussie! Bienvenue sur Peau de N-zassa 🎉",
       utilisateur: {
         identifiant: nouvelUtilisateur[0].id,
         email: nouvelUtilisateur[0].email,
@@ -79,28 +72,25 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Définir le cookie de session
     reponse.cookies.set("session", nouvelUtilisateur[0].id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30, // 30 jours
+      maxAge: 60 * 60 * 24 * 30,
       path: "/",
     });
 
     return reponse;
 
   } catch (erreur) {
-    // ✅ Fix #3 : on renvoie le vrai message d'erreur
     console.error("Erreur d'inscription :", erreur);
-
-    const message =
-      erreur instanceof Error ? erreur.message : "Erreur inconnue";
+    const message = erreur instanceof Error? erreur.message : "Erreur inconnue";
 
     return NextResponse.json(
       {
         erreur: "Une erreur est survenue lors de l'inscription.",
-        detail: process.env.NODE_ENV !== "production" ? message : undefined,
+        detail: process.env.NODE_ENV!== "production"? message : undefined,
+        message: ""
       },
       { status: 500 }
     );
